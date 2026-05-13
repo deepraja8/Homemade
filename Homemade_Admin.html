@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rashmi Raja — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #C9A84C; --gold-light: #E8C97A; --dark: #1A1208; --dark-mid: #2E2210;
+    --border: rgba(201,168,76,0.3); --cream: #FAF5E9; --green: #2ECC71; --red: #E74C3C;
+  }
+  body { background: var(--dark); font-family: 'Lato', sans-serif; color: var(--cream); min-height: 100vh; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: radial-gradient(ellipse at 20% 10%, rgba(201,168,76,0.08) 0%, transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+  .page { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 0 0 60px; }
+  .header { text-align: center; padding: 40px 24px 28px; border-bottom: 1px solid var(--border); position: relative; }
+  .header::after { content: ''; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%); width: 60px; height: 2px; background: var(--gold); }
+  .header-script { font-family: 'Playfair Display', serif; font-style: italic; font-size: 14px; color: var(--gold-light); letter-spacing: 2px; margin-bottom: 4px; }
+  .header-title { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 2px; }
+  .header-sub { font-size: 12px; color: rgba(250,245,233,0.4); margin-top: 6px; letter-spacing: 1px; }
+
+  .login-screen { padding: 40px 24px; }
+  .login-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; display: block; }
+  .login-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; font-size: 15px; color: #fff; font-family: 'Lato', sans-serif; outline: none; letter-spacing: 4px; margin-bottom: 12px; transition: border-color 0.2s; }
+  .login-input:focus { border-color: var(--gold); }
+  .login-btn { width: 100%; background: var(--gold); color: var(--dark); border: none; border-radius: 6px; padding: 14px; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; font-family: 'Lato', sans-serif; transition: background 0.2s; }
+  .login-btn:hover { background: var(--gold-light); }
+  .login-error { font-size: 13px; color: var(--red); margin-top: 10px; text-align: center; display: none; }
+
+  .admin-panel { display: none; }
+  .section { padding: 28px 24px 0; }
+  .section-heading { font-family: 'Playfair Display', serif; font-style: italic; font-size: 20px; color: var(--gold-light); margin-bottom: 14px; display: flex; align-items: center; gap: 12px; }
+  .section-heading::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .item-row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; transition: all 0.3s; }
+  .item-row.unavailable { opacity: 0.5; background: rgba(231,76,60,0.05); border-color: rgba(231,76,60,0.2); }
+  .item-icon { width: 42px; height: 42px; border-radius: 50%; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.25); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .item-icon svg { width: 22px; height: 22px; }
+  .item-info { flex: 1; }
+  .item-name { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+  .item-price { font-size: 12px; color: var(--gold); }
+
+  .status-badge { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; flex-shrink: 0; }
+  .status-badge.available { background: rgba(46,204,113,0.15); color: var(--green); border: 1px solid rgba(46,204,113,0.3); }
+  .status-badge.unavailable { background: rgba(231,76,60,0.15); color: var(--red); border: 1px solid rgba(231,76,60,0.3); }
+
+  .toggle { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: rgba(231,76,60,0.4); border-radius: 24px; cursor: pointer; transition: background 0.3s; }
+  .slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform 0.3s; }
+  input:checked + .slider { background: rgba(46,204,113,0.5); }
+  input:checked + .slider::before { transform: translateX(20px); }
+
+  .divider { margin: 28px 24px 0; border: none; border-top: 1px solid var(--border); position: relative; }
+  .divider::before { content: '✦'; position: absolute; top: -9px; left: 50%; transform: translateX(-50%); background: var(--dark); padding: 0 10px; color: var(--gold); font-size: 12px; }
+
+  .save-banner { margin: 24px 24px 0; background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.25); border-radius: 8px; padding: 14px 16px; font-size: 13px; color: var(--green); text-align: center; display: none; }
+  .save-banner.visible { display: block; }
+
+  .error-banner { margin: 24px 24px 0; background: rgba(231,76,60,0.1); border: 1px solid rgba(231,76,60,0.25); border-radius: 8px; padding: 14px 16px; font-size: 13px; color: var(--red); text-align: center; display: none; }
+  .error-banner.visible { display: block; }
+
+  .loading-row { text-align: center; padding: 20px; color: rgba(250,245,233,0.3); font-style: italic; font-size: 13px; }
+  .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .logout-btn { display: block; margin: 28px 24px 0; width: calc(100% - 48px); background: transparent; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: rgba(250,245,233,0.4); cursor: pointer; font-family: 'Lato', sans-serif; transition: border-color 0.2s, color 0.2s; }
+  .logout-btn:hover { border-color: var(--gold); color: var(--gold); }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="header-script">Rashmi Raja</div>
+    <div class="header-title">Admin Panel</div>
+    <div class="header-sub">Manage item availability</div>
+  </div>
+
+  <div class="login-screen" id="loginScreen">
+    <label class="login-label">Enter Password</label>
+    <input class="login-input" type="password" id="passwordInput" placeholder="••••••••" onkeydown="if(event.key==='Enter') checkPassword()" />
+    <button class="login-btn" onclick="checkPassword()">Enter</button>
+    <div class="login-error" id="loginError">Wrong password. Try again.</div>
+  </div>
+
+  <div class="admin-panel" id="adminPanel">
+    <div class="section">
+      <div class="section-heading">Shrikhand</div>
+      <div id="items-shrikhand"><div class="loading-row"><span class="spinner"></span>Loading...</div></div>
+    </div>
+    <hr class="divider">
+    <div class="section">
+      <div class="section-heading">Paneer</div>
+      <div id="items-paneer"><div class="loading-row"><span class="spinner"></span>Loading...</div></div>
+    </div>
+
+    <div class="save-banner" id="saveBanner">✓ Saved — order page will reflect this immediately</div>
+    <div class="error-banner" id="errorBanner">⚠ Could not save. Check your connection and try again.</div>
+    <button class="logout-btn" onclick="logout()">Log Out</button>
+  </div>
+</div>
+
+<script>
+const PASSWORD   = 'rashmi123';
+const SUPABASE_URL = 'https://hrxhuumklycofoesffha.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhyeGh1dW1rbHljb2ZvZXNmZmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NjE0ODgsImV4cCI6MjA5NDIzNzQ4OH0.iodI-R-9nDF8tZD59PTkrY3nFXmjbkMA6D75oQHV69c';
+
+// ══════════════════════════════════════════════════
+// ITEMS CONFIG — keep in sync with order page
+// ══════════════════════════════════════════════════
+const ITEMS = [
+  { id: 'we',  name: 'White Elaichi Shrikhand',   price: '₹500/kg', category: 'shrikhand', icon: 'shrikhand' },
+  { id: 'ks',  name: 'Kesar (Saffron) Shrikhand', price: '₹600/kg', category: 'shrikhand', icon: 'saffron'   },
+  { id: 'mg',  name: 'Mango Shrikhand',            price: '₹700/kg', category: 'shrikhand', icon: 'mango'     },
+  { id: 'ffp', name: 'Full Fat Paneer',             price: '₹600/kg', category: 'paneer',   icon: 'paneer'    },
+  { id: 'lfp', name: 'Low Fat Paneer',              price: '₹700/kg', category: 'paneer',   icon: 'lowfat'    },
+];
+
+const ICONS = {
+  shrikhand: `<svg viewBox="0 0 24 24" fill="none"><path d="M5 10C5 7 7 5 12 5C17 5 19 7 19 10" stroke="#C9A84C" stroke-width="1.5" stroke-linecap="round"/><path d="M4 13C4 10.5 7.5 9 12 9C16.5 9 20 10.5 20 13C20 16.5 17 19 12 19C7 19 4 16.5 4 13Z" fill="rgba(201,168,76,0.15)" stroke="#C9A84C" stroke-width="1.5"/><circle cx="9" cy="12" r="1" fill="#C9A84C" opacity="0.7"/><circle cx="12" cy="11" r="1" fill="#C9A84C" opacity="0.7"/><circle cx="15" cy="12.5" r="1" fill="#C9A84C" opacity="0.7"/></svg>`,
+  saffron:   `<svg viewBox="0 0 24 24" fill="none"><path d="M5 11C5 8 7.5 6 12 6C16.5 6 19 8 19 11C19 15 16 18.5 12 18.5C8 18.5 5 15 5 11Z" fill="rgba(201,168,76,0.15)" stroke="#C9A84C" stroke-width="1.5"/><path d="M12 3V6" stroke="#C9A84C" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="3" r="0.8" fill="#C9A84C"/><circle cx="9.5" cy="3" r="0.7" fill="#C9A84C" opacity="0.7"/><circle cx="14.5" cy="3" r="0.7" fill="#C9A84C" opacity="0.7"/></svg>`,
+  mango:     `<svg viewBox="0 0 24 24" fill="none"><path d="M12 4C12 4 8 5 7 9C6 13 8 17 12 18C16 17 18 13 17 9C16 5 12 4 12 4Z" fill="rgba(201,168,76,0.2)" stroke="#C9A84C" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 4C12 4 13 2 15 2.5" stroke="#C9A84C" stroke-width="1.2" stroke-linecap="round"/></svg>`,
+  paneer:    `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="8" width="16" height="10" rx="2" fill="rgba(201,168,76,0.15)" stroke="#C9A84C" stroke-width="1.5"/><rect x="7" y="5" width="10" height="5" rx="1.5" fill="rgba(201,168,76,0.1)" stroke="#C9A84C" stroke-width="1.2"/><line x1="4" y1="12" x2="20" y2="12" stroke="#C9A84C" stroke-width="0.8" opacity="0.4"/><line x1="10" y1="8" x2="10" y2="18" stroke="#C9A84C" stroke-width="0.8" opacity="0.4"/><line x1="14" y1="8" x2="14" y2="18" stroke="#C9A84C" stroke-width="0.8" opacity="0.4"/></svg>`,
+  lowfat:    `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="9" width="16" height="9" rx="2" fill="rgba(201,168,76,0.1)" stroke="#C9A84C" stroke-width="1.5"/><rect x="7" y="6" width="10" height="5" rx="1.5" fill="rgba(201,168,76,0.08)" stroke="#C9A84C" stroke-width="1.2"/><line x1="4" y1="13" x2="20" y2="13" stroke="#C9A84C" stroke-width="0.8" opacity="0.35"/></svg>`,
+};
+
+// ══════════════════════════════════════════════════
+// SUPABASE
+// ══════════════════════════════════════════════════
+async function fetchAvailability() {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/availability?select=id,is_available`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+  });
+  const data = await res.json();
+  const map = {};
+  data.forEach(row => map[row.id] = row.is_available);
+  return map;
+}
+
+async function updateAvailability(id, isAvailable) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/availability?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify({ is_available: isAvailable })
+  });
+  return res.ok;
+}
+
+// ══════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════
+function renderItems(availability) {
+  ['shrikhand', 'paneer'].forEach(cat => {
+    const container = document.getElementById('items-' + cat);
+    container.innerHTML = '';
+    ITEMS.filter(i => i.category === cat).forEach(item => {
+      const isAvail = availability[item.id] !== false;
+      const row = document.createElement('div');
+      row.className = 'item-row' + (isAvail ? '' : ' unavailable');
+      row.id = 'row-' + item.id;
+      row.innerHTML = `
+        <div class="item-icon">${ICONS[item.icon] || ICONS.shrikhand}</div>
+        <div class="item-info">
+          <div class="item-name">${item.name}</div>
+          <div class="item-price">${item.price}</div>
+        </div>
+        <div class="status-badge ${isAvail ? 'available' : 'unavailable'}" id="badge-${item.id}">
+          ${isAvail ? 'Available' : 'Unavailable'}
+        </div>
+        <label class="toggle">
+          <input type="checkbox" ${isAvail ? 'checked' : ''} onchange="toggleItem('${item.id}', this.checked)" />
+          <span class="slider"></span>
+        </label>`;
+      container.appendChild(row);
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════
+// TOGGLE
+// ══════════════════════════════════════════════════
+async function toggleItem(id, isAvailable) {
+  const row   = document.getElementById('row-' + id);
+  const badge = document.getElementById('badge-' + id);
+  row.classList.toggle('unavailable', !isAvailable);
+  badge.className = 'status-badge ' + (isAvailable ? 'available' : 'unavailable');
+  badge.textContent = isAvailable ? 'Available' : 'Unavailable';
+
+  const ok = await updateAvailability(id, isAvailable);
+  const saveBanner  = document.getElementById('saveBanner');
+  const errorBanner = document.getElementById('errorBanner');
+  if (ok) {
+    saveBanner.classList.add('visible');
+    errorBanner.classList.remove('visible');
+    clearTimeout(saveBanner._t);
+    saveBanner._t = setTimeout(() => saveBanner.classList.remove('visible'), 3000);
+  } else {
+    errorBanner.classList.add('visible');
+    saveBanner.classList.remove('visible');
+  }
+}
+
+// ══════════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════════
+async function checkPassword() {
+  const val = document.getElementById('passwordInput').value;
+  if (val !== PASSWORD) {
+    document.getElementById('loginError').style.display = 'block';
+    document.getElementById('passwordInput').value = '';
+    return;
+  }
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminPanel').style.display = 'block';
+  try {
+    const availability = await fetchAvailability();
+    renderItems(availability);
+  } catch(e) {
+    document.getElementById('errorBanner').classList.add('visible');
+    document.getElementById('errorBanner').textContent = '⚠ Could not connect to database. Check your internet connection.';
+  }
+}
+
+function logout() {
+  document.getElementById('loginScreen').style.display = 'block';
+  document.getElementById('adminPanel').style.display = 'none';
+  document.getElementById('passwordInput').value = '';
+}
+</script>
+</body>
+</html>
