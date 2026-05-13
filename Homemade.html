@@ -30,7 +30,8 @@
   .section-heading { font-family: 'Playfair Display', serif; font-style: italic; font-size: 22px; color: var(--gold-light); margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
   .section-heading::after { content: ''; flex: 1; height: 1px; background: var(--border); }
   .product-grid { display: flex; flex-direction: column; gap: 10px; }
-  .product-card { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; transition: background 0.2s, border-color 0.2s; }
+  .product-card { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 0; transition: background 0.2s, border-color 0.2s; }
+  .card-top { display: flex; align-items: center; gap: 14px; }
   .product-card.available { cursor: pointer; }
   .product-card.available:hover, .product-card.selected { background: rgba(201,168,76,0.1); border-color: var(--gold); }
   .product-card.unavailable { opacity: 0.4; pointer-events: none; border-color: rgba(231,76,60,0.3); }
@@ -46,6 +47,10 @@
   .qty-btn { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--gold); background: transparent; color: var(--gold); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s, color 0.15s; flex-shrink: 0; }
   .qty-btn:hover { background: var(--gold); color: var(--dark); }
   .qty-display { min-width: 28px; text-align: center; font-size: 15px; font-weight: 700; color: #fff; }
+  .weight-select { background: rgba(255,255,255,0.07); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-size: 12px; color: var(--gold); font-family: 'Lato', sans-serif; outline: none; cursor: pointer; -webkit-appearance: none; text-align: center; }
+  .weight-select:focus { border-color: var(--gold); }
+  .weight-select option { background: var(--dark-mid); color: #fff; }
+  .card-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(201,168,76,0.15); }
   .divider { margin: 32px 24px 0; border: none; border-top: 1px solid var(--border); position: relative; }
   .divider::before { content: '✦'; position: absolute; top: -9px; left: 50%; transform: translateX(-50%); background: var(--dark); padding: 0 10px; color: var(--gold); font-size: 12px; }
   .form-group { margin-bottom: 16px; }
@@ -242,8 +247,14 @@ const ICONS = {
 // ══════════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════════
-const qtys = {};
-ITEMS.forEach(item => qtys[item.id] = 0);
+const qtys    = {};
+const weights = {};
+const WEIGHT_OPTIONS = [
+  { label: '250g', value: 0.25, priceMultiplier: 0.25 },
+  { label: '500g', value: 0.5,  priceMultiplier: 0.5  },
+  { label: '1 kg', value: 1,    priceMultiplier: 1     },
+];
+ITEMS.forEach(item => { qtys[item.id] = 0; weights[item.id] = '1 kg'; });
 
 // ══════════════════════════════════════════════════
 // SUPABASE
@@ -276,17 +287,28 @@ function renderItems(availability) {
       const card = document.createElement('div');
       card.className = 'product-card ' + (avail ? 'available' : 'unavailable');
       card.id = 'card-' + item.id;
+      const weightOpts = WEIGHT_OPTIONS.map(w =>
+        `<option value="${w.label}" ${w.label === '1 kg' ? 'selected' : ''}>${w.label}</option>`
+      ).join('');
       card.innerHTML = `
-        <div class="product-icon">${ICONS[item.icon] || ICONS.shrikhand}</div>
-        <div class="product-info">
-          <div class="product-name">${item.name}${!avail ? '<span class="sold-out-tag">Unavailable</span>' : ''}</div>
-          <div class="product-desc">${item.desc}</div>
+        <div class="card-top">
+          <div class="product-icon">${ICONS[item.icon] || ICONS.shrikhand}</div>
+          <div class="product-info">
+            <div class="product-name">${item.name}${!avail ? '<span class="sold-out-tag">Unavailable</span>' : ''}</div>
+            <div class="product-desc">${item.desc}</div>
+          </div>
+          <div class="product-price">₹${item.price} <span>per kg</span></div>
         </div>
-        <div class="product-price">₹${item.price} <span>per kg</span></div>
-        <div class="qty-control">
-          <button class="qty-btn" onclick="changeQty('${item.id}', -1)">−</button>
-          <div class="qty-display" id="qty-${item.id}">0</div>
-          <button class="qty-btn" onclick="changeQty('${item.id}', 1)">+</button>
+        <div class="card-bottom">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:rgba(201,168,76,0.6);">Weight</span>
+            <select class="weight-select" id="weight-${item.id}" onchange="changeWeight('${item.id}', this.value)">${weightOpts}</select>
+          </div>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="changeQty('${item.id}', -1)">−</button>
+            <div class="qty-display" id="qty-${item.id}">0</div>
+            <button class="qty-btn" onclick="changeQty('${item.id}', 1)">+</button>
+          </div>
         </div>`;
       grid.appendChild(card);
     });
@@ -301,6 +323,20 @@ function changeQty(id, delta) {
   document.getElementById('qty-' + id).textContent = qtys[id];
   document.getElementById('card-' + id).classList.toggle('selected', qtys[id] > 0);
   updateSummary();
+}
+
+function changeWeight(id, val) {
+  weights[id] = val;
+  updateSummary();
+}
+
+function getWeightMultiplier(id) {
+  const w = WEIGHT_OPTIONS.find(o => o.label === weights[id]);
+  return w ? w.priceMultiplier : 1;
+}
+
+function getItemTotal(item) {
+  return Math.round(item.price * getWeightMultiplier(item.id) * qtys[item.id]);
 }
 
 function getMinDate(daysAhead) {
@@ -324,7 +360,7 @@ function updateMinDate() {
 
 function updateSummary() {
   const selected = ITEMS.filter(i => qtys[i.id] > 0);
-  const total = selected.reduce((s, i) => s + i.price * qtys[i.id], 0);
+  const total = selected.reduce((s, i) => s + getItemTotal(i), 0);
   const el = document.getElementById('summaryItems');
   const totalEl = document.getElementById('summaryTotal');
   const btn = document.getElementById('submitBtn');
@@ -336,7 +372,7 @@ function updateSummary() {
     btn.textContent = 'Select Items to Order';
   } else {
     el.innerHTML = selected.map(i =>
-      `<div class="summary-row"><span>${i.name} × ${qtys[i.id]} kg</span><span>₹${i.price * qtys[i.id]}</span></div>`
+      `<div class="summary-row"><span>${i.name} — ${weights[i.id]} × ${qtys[i.id]}</span><span>₹${getItemTotal(i)}</span></div>`
     ).join('');
     totalEl.style.display = 'flex';
     document.getElementById('totalAmt').textContent = '₹' + total.toLocaleString('en-IN');
@@ -357,8 +393,9 @@ function placeOrder() {
   if (!name || !phone) { alert('Please fill in your name and WhatsApp number.'); return; }
   const selected = ITEMS.filter(i => qtys[i.id] > 0);
   if (selected.length === 0) return;
-  const total = selected.reduce((s, i) => s + i.price * qtys[i.id], 0);
-  const orderLines = selected.map(i => `${i.name} × ${qtys[i.id]}kg — ₹${i.price * qtys[i.id]}`);
+  const total = selected.reduce((s, i) => s + getItemTotal(i), 0);
+  const total = selected.reduce((s, i) => s + getItemTotal(i), 0);
+  const orderLines = selected.map(i => `${i.name} — ${weights[i.id]} × ${qtys[i.id]} — ₹${getItemTotal(i)}`);
   let msg = `🛒 *New Order from ${name}*\n\n`;
   msg += orderLines.map(l => `• ${l}`).join('\n');
   msg += `\n\n*Total: ₹${total.toLocaleString('en-IN')}*`;
@@ -383,6 +420,11 @@ function resetForm() {
     if (qEl) qEl.textContent = '0';
     const card = document.getElementById('card-' + i.id);
     if (card) card.classList.remove('selected');
+  });
+  ITEMS.forEach(i => {
+    weights[i.id] = '1 kg';
+    const wEl = document.getElementById('weight-' + i.id);
+    if (wEl) wEl.value = '1 kg';
   });
   ['custName','custPhone','custDate','custNotes'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('custTime').selectedIndex = 0;
