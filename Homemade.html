@@ -148,11 +148,19 @@
       </div>
       <div class="form-group">
         <label class="form-label">WhatsApp Number</label>
-        <input class="form-input" id="custPhone" type="tel" placeholder="+91 98765 43210" />
+        <div style="display:flex;align-items:center;gap:0;">
+          <span style="background:rgba(255,255,255,0.07);border:1px solid var(--border);border-right:none;border-radius:6px 0 0 6px;padding:12px 12px;font-size:14px;color:var(--gold);white-space:nowrap;flex-shrink:0;">+91</span>
+          <input class="form-input" id="custPhone" type="tel" placeholder="98765 43210" maxlength="10" style="border-radius:0 6px 6px 0;" />
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Pickup Date</label>
-        <input class="form-input" id="custDate" type="date" />
+        <div style="position:relative;">
+          <input class="form-input" id="custDate" type="date" style="color:transparent;" oninput="updateDateDisplay()" onchange="updateDateDisplay(); updateSummary();" />
+          <div id="dateDisplay" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;padding:12px 14px;font-size:14px;color:#fff;pointer-events:none;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;">
+            <span id="dateDisplayText" style="color:rgba(250,245,233,0.25);">DD/MM/YYYY</span>
+          </div>
+        </div>
         <div class="date-hint" id="dateHint"></div>
       </div>
       <div class="form-group">
@@ -350,8 +358,15 @@ function updateMinDate() {
   var hasPaneer    = ITEMS.filter(function(i) { return i.category === 'paneer'; }).some(function(i) { return qtys[i.id] > 0; });
   var dateInput = document.getElementById('custDate');
   var minDays = 0, hintText = '';
-  if (hasShrikhand) { minDays = 2; hintText = 'Shrikhand needs at least 2 days to prepare'; }
-  else if (hasPaneer) { minDays = 1; hintText = 'Order by today for tomorrow pickup'; }
+  var now = new Date();
+  var isPast4pm = now.getHours() >= 16;
+  if (hasShrikhand) {
+    minDays = isPast4pm ? 3 : 2;
+    hintText = isPast4pm ? 'Orders after 4 PM need 3 days prep time' : 'Shrikhand needs at least 2 days to prepare';
+  } else if (hasPaneer) {
+    minDays = 1;
+    hintText = 'Order by today for tomorrow pickup';
+  }
   var newMin = getMinDate(minDays);
   dateInput.min = newMin;
   if (dateInput.value && dateInput.value < newMin) dateInput.value = '';
@@ -376,13 +391,34 @@ function updateSummary() {
       return '<div class="summary-row"><span>' + i.name + ' &mdash; ' + weights[i.id] + ' &times; ' + qtys[i.id] + '</span><span>&#8377;' + getItemTotal(i) + '</span></div>';
     }).join('');
     totalEl.style.display = 'flex';
-    document.getElementById('totalAmt').textContent = '&#8377;' + total.toLocaleString('en-IN');
+    document.getElementById('totalAmt').textContent = '₹' + total.toLocaleString('en-IN');
     btn.disabled = false;
     btn.textContent = 'Place Order \u2192';
   }
 }
 
 // ── ORDER ─────────────────────────────────────────
+function padR(str, len) { str = String(str); while (str.length < len) str += ' '; return str.substring(0, len); }
+function padL(str, len) { str = String(str); while (str.length < len) str = ' ' + str; return str; }
+
+function formatDateDisplay(isoDate) {
+  if (!isoDate) return '';
+  var parts = isoDate.split('-');
+  return parts[2] + '/' + parts[1] + '/' + parts[0];
+}
+
+function updateDateDisplay() {
+  var val = document.getElementById('custDate').value;
+  var displayEl = document.getElementById('dateDisplayText');
+  if (val) {
+    displayEl.style.color = '#fff';
+    displayEl.textContent = formatDateDisplay(val);
+  } else {
+    displayEl.style.color = 'rgba(250,245,233,0.25)';
+    displayEl.textContent = 'DD/MM/YYYY';
+  }
+}
+
 function placeOrder() {
   var name  = document.getElementById('custName').value.trim();
   var phone = document.getElementById('custPhone').value.trim();
@@ -390,27 +426,41 @@ function placeOrder() {
   var time  = document.getElementById('custTime').value;
   var notes = document.getElementById('custNotes').value.trim();
   if (!name || !phone) { alert('Please fill in your name and WhatsApp number.'); return; }
+  if (phone.length !== 10) { alert('Please enter a valid 10-digit WhatsApp number.'); return; }
+  var fullPhone = '+91' + phone;
   var selected = ITEMS.filter(function(i) { return qtys[i.id] > 0; });
   if (selected.length === 0) return;
   var total = selected.reduce(function(s, i) { return s + getItemTotal(i); }, 0);
-  var orderLines = selected.map(function(i) {
-    return i.name + ' - ' + weights[i.id] + ' x ' + qtys[i.id] + ' - Rs.' + getItemTotal(i);
+
+  // Build table-style WhatsApp message
+  var sep = '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500';
+  var msg = '\uD83D\uDED2 *New Order \u2014 ' + name + '*\n';
+  msg += '\uD83D\uDCDE ' + fullPhone + '\n\n';
+  msg += '*ITEMS*\n';
+  msg += sep + '\n';
+  msg += padR('Item', 22) + padL('Qty', 4) + padL('Wt', 6) + padL('Amt', 8) + '\n';
+  msg += sep + '\n';
+  selected.forEach(function(i) {
+    msg += padR(i.name, 22) + padL(String(qtys[i.id]), 4) + padL(weights[i.id], 6) + padL('\u20B9' + getItemTotal(i), 8) + '\n';
   });
-  var msg = '*New Order from ' + name + '*\n\n';
-  msg += orderLines.map(function(l) { return '- ' + l; }).join('\n');
-  msg += '\n\n*Total: Rs.' + total.toLocaleString('en-IN') + '*';
-  if (date) msg += '\n\nPickup date: ' + date;
-  if (time) msg += '\nPickup time: ' + time;
-  msg += '\nWhatsApp: ' + phone;
-  if (notes) msg += '\nNotes: ' + notes;
+  msg += sep + '\n';
+  msg += padR('*TOTAL*', 22) + padL('', 4) + padL('', 6) + padL('*\u20B9' + total.toLocaleString('en-IN') + '*', 8) + '\n';
+  msg += sep;
+  if (date) msg += '\n\n\uD83D\uDCC5 Pickup: ' + formatDateDisplay(date);
+  if (time) msg += '\n\u23F0 Time: ' + time;
+  if (notes) msg += '\n\uD83D\uDCDD Notes: ' + notes;
+
+  var orderLines = selected.map(function(i) {
+    return i.name + ' — ' + weights[i.id] + ' × ' + qtys[i.id] + ' — ₹' + getItemTotal(i);
+  });
   window.open('https://wa.me/919820752941?text=' + encodeURIComponent(msg), '_blank');
   document.getElementById('orderForm').style.display = 'none';
   var ss = document.getElementById('successScreen');
   ss.classList.add('visible');
   document.getElementById('successName').textContent = name;
-  document.getElementById('successPhone').textContent = phone;
+  document.getElementById('successPhone').textContent = fullPhone;
   document.getElementById('successItems').innerHTML = orderLines.map(function(l) { return '<div>' + l + '</div>'; }).join('');
-  document.getElementById('successTotal').textContent = 'Rs.' + total.toLocaleString('en-IN');
+  document.getElementById('successTotal').textContent = '₹' + total.toLocaleString('en-IN');
 }
 
 function resetForm() {
@@ -424,6 +474,7 @@ function resetForm() {
     if (card) card.classList.remove('selected');
   });
   ['custName','custPhone','custDate','custNotes'].forEach(function(id) { document.getElementById(id).value = ''; });
+  updateDateDisplay();
   document.getElementById('custTime').selectedIndex = 0;
   updateSummary();
   document.getElementById('orderForm').style.display = 'block';
