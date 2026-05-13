@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rashmi Raja — Homemade Shrikhand & Paneer</title>
+<title>Homemade — Shrikhand & Paneer</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -96,7 +96,7 @@
 <div class="page">
   <div class="header">
     <div class="ornament">❧ ✦ ❧</div>
-    <div class="header-script">Homemade</div>
+    <div class="header-script">Fresh &amp; Handcrafted</div>
     <div class="header-title">Shrikhand<br>& Paneer</div>
     <div class="header-subtitle">Pure · Fresh · Handcrafted</div>
     <div class="header-tagline">Made with love, ready for pickup</div>
@@ -288,28 +288,29 @@ function renderItems(availability) {
       card.className = 'product-card ' + (avail ? 'available' : 'unavailable');
       card.id = 'card-' + item.id;
       const weightOpts = WEIGHT_OPTIONS.map(w =>
-        `<option value="${w.label}" ${w.label === '1 kg' ? 'selected' : ''}>${w.label}</option>`
+        '<option value="' + w.label + '"' + (w.label === '1 kg' ? ' selected' : '') + '>' + w.label + '</option>'
       ).join('');
-      card.innerHTML = `
-        <div class="card-top">
-          <div class="product-icon">${ICONS[item.icon] || ICONS.shrikhand}</div>
-          <div class="product-info">
-            <div class="product-name">${item.name}${!avail ? '<span class="sold-out-tag">Unavailable</span>' : ''}</div>
-            <div class="product-desc">${item.desc}</div>
-          </div>
-          <div class="product-price">₹${item.price} <span>per kg</span></div>
-        </div>
-        <div class="card-bottom">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:rgba(201,168,76,0.6);">Weight</span>
-            <select class="weight-select" id="weight-${item.id}" onchange="changeWeight('${item.id}', this.value)">${weightOpts}</select>
-          </div>
-          <div class="qty-control">
-            <button class="qty-btn" onclick="changeQty('${item.id}', -1)">−</button>
-            <div class="qty-display" id="qty-${item.id}">0</div>
-            <button class="qty-btn" onclick="changeQty('${item.id}', 1)">+</button>
-          </div>
-        </div>`;
+      const unavailBadge = !avail ? '<span class="sold-out-tag">Unavailable</span>' : '';
+      card.innerHTML =
+        '<div class="card-top">' +
+          '<div class="product-icon">' + (ICONS[item.icon] || ICONS.shrikhand) + '</div>' +
+          '<div class="product-info">' +
+            '<div class="product-name">' + item.name + unavailBadge + '</div>' +
+            '<div class="product-desc">' + item.desc + '</div>' +
+          '</div>' +
+          '<div class="product-price">&#8377;' + item.price + ' <span>per kg</span></div>' +
+        '</div>' +
+        '<div class="card-bottom">' +
+          '<div style="display:flex;align-items:center;gap:8px;">' +
+            '<span style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:rgba(201,168,76,0.6);">Weight</span>' +
+            '<select class="weight-select" id="weight-' + item.id + '" onchange="changeWeight('' + item.id + '', this.value)">' + weightOpts + '</select>' +
+          '</div>' +
+          '<div class="qty-control">' +
+            '<button class="qty-btn" onclick="changeQty('' + item.id + '', -1)">&#8722;</button>' +
+            '<div class="qty-display" id="qty-' + item.id + '">0</div>' +
+            '<button class="qty-btn" onclick="changeQty('' + item.id + '', 1)">+</button>' +
+          '</div>' +
+        '</div>';
       grid.appendChild(card);
     });
   });
