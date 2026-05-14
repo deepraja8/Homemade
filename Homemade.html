@@ -426,6 +426,9 @@ function placeOrder() {
   var time  = document.getElementById('custTime').value;
   var notes = document.getElementById('custNotes').value.trim();
   if (!name || !phone) { alert('Please fill in your name and WhatsApp number.'); return; }
+  var dateInput = document.getElementById('custDate');
+  if (!date) { alert('Please select a pickup date.'); return; }
+  if (dateInput.min && date < dateInput.min) { alert('Selected date is not available. Please pick a valid pickup date.'); return; }
   if (phone.length !== 10) { alert('Please enter a valid 10-digit WhatsApp number.'); return; }
   var fullPhone = '+91' + phone;
   var selected = ITEMS.filter(function(i) { return qtys[i.id] > 0; });
@@ -486,6 +489,7 @@ fetchAvailability().then(function(availability) {
   document.getElementById('loadingScreen').style.display = 'none';
   document.getElementById('orderForm').style.display = 'block';
   renderItems(availability);
+  updateMinDate();
 });
 </script>
 </body>
